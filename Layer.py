@@ -287,3 +287,4 @@ class DeformableConvLayer(keras.layers.Conv2D):
         b = tf.tile(batch_idx, (1, h, w, n))
         pixel_idx = tf.stack([b, y, x], axis=-1)
         return tf.gather_nd(inputs, pixel_idx)
+

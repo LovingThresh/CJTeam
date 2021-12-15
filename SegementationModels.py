@@ -69,6 +69,7 @@ def VGG_16_Encoder(input_shape=(224, 224, 3), pretrained=False):
 
     return model, features
 
+
 # ResNetEncoder使用类的形式来写
 class BasicBlock(keras.layers.Layer):
     expansion = 1
@@ -76,11 +77,11 @@ class BasicBlock(keras.layers.Layer):
     def __init__(self, out_channel, strides=1, downsample=None, **kwargs):
         super(BasicBlock, self).__init__(**kwargs)
         self.conv1 = keras.layers.Conv2D(out_channel, kernel_size=3, strides=strides,
-                                   padding="SAME", use_bias=False)
+                                         padding="SAME", use_bias=False)
         self.bn1 = keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
         # -----------------------------------------
         self.conv2 = keras.layers.Conv2D(out_channel, kernel_size=3, strides=1,
-                                   padding="SAME", use_bias=False)
+                                         padding="SAME", use_bias=False)
         self.bn2 = keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
         # -----------------------------------------
         self.downsample = downsample
@@ -120,7 +121,7 @@ class Bottleneck(keras.layers.Layer):
         self.bn1 = keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv1/BatchNorm")
         # -----------------------------------------
         self.conv2 = keras.layers.Conv2D(out_channel, kernel_size=3, use_bias=False,
-                                   strides=strides, padding="SAME", name="conv2")
+                                         strides=strides, padding="SAME", name="conv2")
         self.bn2 = keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv2/BatchNorm")
         # -----------------------------------------
         self.conv3 = keras.layers.Conv2D(out_channel * self.expansion, kernel_size=1, use_bias=False, name="conv3")
@@ -157,7 +158,7 @@ def _make_layer(block, in_channel, channel, block_num, name, strides=1):
     if strides != 1 or in_channel != channel * block.expansion:
         downsample = keras.Sequential([
             keras.layers.Conv2D(channel * block.expansion, kernel_size=1, strides=strides,
-                          use_bias=False, name="conv1"),
+                                use_bias=False, name="conv1"),
             keras.layers.BatchNormalization(momentum=0.9, epsilon=1.001e-5, name="BatchNorm")
         ], name="shortcut")
 
@@ -175,7 +176,7 @@ def _resnet(block, blocks_num, im_width=224, im_height=224, num_classes=1000, in
     # (None, 224, 224, 3)
     input_image = keras.layers.Input(shape=(im_height, im_width, 3), dtype="float32")
     x = keras.layers.Conv2D(filters=64, kernel_size=7, strides=2,
-                      padding="SAME", use_bias=False, name="conv1")(input_image)
+                            padding="SAME", use_bias=False, name="conv1")(input_image)
     x = keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name="conv1/BatchNorm")(x)
     x = keras.layers.ReLU()(x)
     x = keras.layers.MaxPool2D(pool_size=3, strides=2, padding="SAME")(x)
@@ -360,11 +361,11 @@ def FCN_8sEncoder(Encoder, feature_list=None, out_num=None):
 
     return model
 
+
 # DeepLab系列分割网络
 # DeepLab的Motivation: ①上采样分辨率低;②空间不敏感
 # DeepLab的特点Atrous Convolution;MSc;CRF;LargeFOV;只下采样八倍
 def DeepLabV1_Encoder(input_shape=(224, 224, 3)):
-
     global model
     assert input_shape[0] % 8 == 0
     assert input_shape[1] % 8 == 0
@@ -378,6 +379,7 @@ def DeepLabV1_Encoder(input_shape=(224, 224, 3)):
             weight_loss = tf.multiply(tf.nn.l2_loss(var), w1)
             tf.compat.v1.add_to_collection('losses', weight_loss)
         return var
+
     # block1
     x = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(input_layer)
     x = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
@@ -422,26 +424,28 @@ def DeepLabV1_Encoder(input_shape=(224, 224, 3)):
 
     return model, features
 
+
 # Total params: 17,599,810
 def DeepLabV1_Decoder_with_FOV(Encoder, feature_list=None, out_num=None):
     global model
     f1, f2, f3, f4 = feature_list
     Encoder_out_layer = Encoder.output
 
-    #D_block1
-    x = Layer.DilatedConv2D(k_size=3, rate=12, out_channel=512, padding='SAME', name='D_block1_Aconv1')(Encoder_out_layer)
+    # D_block1
+    x = Layer.DilatedConv2D(k_size=3, rate=12, out_channel=512, padding='SAME', name='D_block1_Aconv1')(
+        Encoder_out_layer)
     x = keras.layers.Dropout(0.5)(x)
 
-    #D_block2
+    # D_block2
     x = keras.layers.Conv2D(1024, (1, 1), strides=1, activation='relu', name='D_block2_conv1')(x)
     x = keras.layers.Dropout(0.5)(x)
 
-    #D_block3
+    # D_block3
     x = keras.layers.Conv2D(out_num, (1, 1), strides=1, activation='relu', name='D_block3_conv1')(x)
 
-    #Upsample
+    # Upsample
     for i in range(3):
-        x  = keras.layers.UpSampling2D((2, 2), name='Upsample{}'.format(i + 1))(x)
+        x = keras.layers.UpSampling2D((2, 2), name='Upsample{}'.format(i + 1))(x)
 
     model = keras.models.Model(inputs=Encoder.input, outputs=x, name='DeepLabV1')
 
@@ -454,15 +458,16 @@ def DeepLabV1_Decoder_with_FOV_MSc(Encoder, feature_list=None, out_num=None):
     f1, f2, f3, f4 = feature_list
     Encoder_out_layer = Encoder.output
 
-    #D_block1
-    x = Layer.DilatedConv2D(k_size=3, rate=12, out_channel=512, padding='SAME', name='D_block1_Aconv1')(Encoder_out_layer)
+    # D_block1
+    x = Layer.DilatedConv2D(k_size=3, rate=12, out_channel=512, padding='SAME', name='D_block1_Aconv1')(
+        Encoder_out_layer)
     x = keras.layers.Dropout(0.5)(x)
 
-    #D_block2
+    # D_block2
     x = keras.layers.Conv2D(1024, (1, 1), strides=1, activation='relu', name='D_block2_conv1')(x)
     x = keras.layers.Dropout(0.5)(x)
 
-    #D_block3
+    # D_block3
     x = keras.layers.Conv2D(out_num, (1, 1), strides=1, activation='relu', name='D_block3_conv1')(x)
 
     # Branch
@@ -504,7 +509,6 @@ def ResNetDecoder(Encoder, out_num):
         dim = Encoder_out_layer.shape[-1]
         dim = np.int(dim / 2)
 
-
         # y = Layer.DilatedConv2D(k_size=3, rate=2, out_channel=dim, padding='SAME', name='D_block1_Aconv{}'.format(i + 1))(x)
         # y = keras.layers.Conv2DTranspose(dim, (3, 3), strides=2, padding='same', use_bias=False)(y)
         # y = keras.layers.BatchNormalization()(y)
@@ -517,7 +521,6 @@ def ResNetDecoder(Encoder, out_num):
         # x = keras.layers.Multiply()([x, y])
 
     dim = out_num
-
 
     # y = Layer.DilatedConv2D(k_size=3, rate=2, out_channel=dim, padding='SAME', name='D_block1_Aconv5')(x)
     # y = keras.layers.Conv2DTranspose(dim, (3, 3), strides=2, padding='same', use_bias=False)(y)
@@ -533,7 +536,6 @@ def ResNetDecoder(Encoder, out_num):
     model = keras.models.Model(inputs=Encoder.input, outputs=x, name='ResNet-Segmentation')
 
     return model
-
 
 # ==========================================================================================
 #                                Test
