@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import cv2
 
 
 # 从指定路径生成训练文本
@@ -34,7 +35,7 @@ def get_mean_and_std_of_Dataset(filepath):
     B_channel = 0
     for idx in range(len(pathDir)):
         filename = pathDir[idx]
-        img = imread(os.path.join(filepath, filename)) / 255.0
+        img = cv2.imread(os.path.join(filepath, filename)) / 255.0
         R_channel = R_channel + np.sum(img[:, :, 0])
         G_channel = G_channel + np.sum(img[:, :, 1])
         B_channel = B_channel + np.sum(img[:, :, 2])
@@ -49,7 +50,7 @@ def get_mean_and_std_of_Dataset(filepath):
     B_channel = 0
     for idx in range(len(pathDir)):
         filename = pathDir[idx]
-        img = imread(os.path.join(filepath, filename)) / 255.0
+        img = cv2.imread(os.path.join(filepath, filename)) / 255.0
         R_channel = R_channel + np.sum((img[:, :, 0] - R_mean) ** 2)
         G_channel = G_channel + np.sum((img[:, :, 1] - G_mean) ** 2)
         B_channel = B_channel + np.sum((img[:, :, 2] - B_mean) ** 2)
@@ -59,6 +60,3 @@ def get_mean_and_std_of_Dataset(filepath):
     B_var = np.sqrt(B_channel / num)
     print("R_mean is %f, G_mean is %f, B_mean is %f" % (R_mean, G_mean, B_mean))
     print("R_var is %f, G_var is %f, B_var is %f" % (R_var, G_var, B_var))
-
-
-
