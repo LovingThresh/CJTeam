@@ -202,7 +202,7 @@ class DeformableConvLayer(keras.layers.Conv2D):
         w3 = (y - y0) * (x - x0)
         # expand dim for broadcast
         w0, w1, w2, w3 = [tf.expand_dims(i, axis=-1) for i in [w0, w1, w2, w3]]
-        # bilinear interpolation
+        # linear interpolation
         pixels = tf.add_n([w0 * p0, w1 * p1, w2 * p2, w3 * p3])
 
         # reshape the "big" feature map
