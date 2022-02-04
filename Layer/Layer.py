@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow import Variable
 from tensorflow.python.ops.init_ops_v2 import RandomNormal
+from keras import backend as K
 
 
 def tf_flatten(a):
@@ -47,7 +48,7 @@ class DilatedConv2D(keras.layers.Layer):
             initial_value=self.w_init(shape=(self.k_size, self.k_size, input_shape[-1], self.uints),
                                       dtype='float32'), trainable=True)
 
-    def call(self, inputs,  **kwargs):  # Defines the computation from inputs to outputs
+    def call(self, inputs, **kwargs):  # Defines the computation from inputs to outputs
 
         return tf.nn.atrous_conv2d(value=inputs, filters=self.weight, rate=self.rate, padding=self.padding,
                                    name=self._name)
@@ -288,3 +289,91 @@ class DeformableConvLayer(keras.layers.Conv2D):
         pixel_idx = tf.stack([b, y, x], axis=-1)
         return tf.gather_nd(inputs, pixel_idx)
 
+
+# SegNet的Maxunpooling层
+class MaxPoolingWithArgmax2D(keras.layers.Layer):
+    def __init__(self, pool_size=(2, 2), strides=(2, 2), padding="same", **kwargs):
+        super(MaxPoolingWithArgmax2D, self).__init__(**kwargs)
+        self.padding = padding
+        self.pool_size = pool_size
+        self.strides = strides
+
+    def call(self, inputs, **kwargs):
+        padding = self.padding
+        pool_size = self.pool_size
+        strides = self.strides
+        if K.backend() == "tensorflow":
+            ksize = [1, pool_size[0], pool_size[1], 1]
+            padding = padding.upper()
+            strides = [1, strides[0], strides[1], 1]
+            output, argmax = tf.compat.v1.nn.max_pool_with_argmax(
+                inputs, ksize=ksize, strides=strides, padding=padding
+            )
+        else:
+            errmsg = "{} backend is not supported for layer {}".format(
+                K.backend(), type(self).__name__
+            )
+            raise NotImplementedError(errmsg)
+        argmax = K.cast(argmax, K.floatx())
+        return [output, argmax]
+
+    def compute_output_shape(self, input_shape):
+        ratio = (1, 2, 2, 1)
+        output_shape = [
+            dim // ratio[idx] if dim is not None else None
+            for idx, dim in enumerate(input_shape)
+        ]
+        output_shape = tuple(output_shape)
+        return [output_shape, output_shape]
+
+    def compute_mask(self, inputs, mask=None):
+        return 2 * [None]
+
+
+class MaxUnpooling2D(keras.layers.Layer):
+    def __init__(self, size=(2, 2), **kwargs):
+        super(MaxUnpooling2D, self).__init__(**kwargs)
+        self.size = size
+
+    def call(self, inputs, output_shape=None):
+        updates, mask = inputs[0], inputs[1]
+        with tf.compat.v1.variable_scope(self.name):
+            mask = K.cast(mask, "int32")
+            input_shape = tf.compat.v1.shape(updates, out_type="int32")
+            #  calculation new shape
+            if output_shape is None:
+                output_shape = (
+                    input_shape[0],
+                    input_shape[1] * self.size[0],
+                    input_shape[2] * self.size[1],
+                    input_shape[3],
+                )
+            self.output_shape1 = output_shape
+
+            # calculation indices for batch, height, width and feature maps
+            one_like_mask = K.ones_like(mask, dtype="int32")
+            batch_shape = K.concatenate([[input_shape[0]], [1], [1], [1]], axis=0)
+            batch_range = K.reshape(
+                tf.compat.v1.range(output_shape[0], dtype="int32"), shape=batch_shape
+            )
+            b = one_like_mask * batch_range
+            y = mask // (output_shape[2] * output_shape[3])
+            x = (mask // output_shape[3]) % output_shape[2]
+            feature_range = tf.compat.v1.range(output_shape[3], dtype="int32")
+            f = one_like_mask * feature_range
+
+            # transpose indices & reshape update values to one dimension
+            updates_size = tf.compat.v1.size(updates)
+            indices = K.transpose(K.reshape(K.stack([b, y, x, f]), [4, updates_size]))
+            values = K.reshape(updates, [updates_size])
+            ret = tf.compat.v1.scatter_nd(indices, values, output_shape)
+            return ret
+
+    def compute_output_shape(self, input_shape):
+        mask_shape = input_shape[1]
+        return (
+            mask_shape[0],
+            mask_shape[1] * self.size[0],
+            mask_shape[2] * self.size[1],
+            mask_shape[3],
+        )
