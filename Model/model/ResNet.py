@@ -41,3 +41,4 @@ def ResNetDecoder(Encoder, out_num):
     model = keras.models.Model(inputs=Encoder.input, outputs=x, name='ResNet-Segmentation')
 
     return model
+
