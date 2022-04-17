@@ -5,7 +5,7 @@ model = object
 
 # FCN系列网络-FCN-8s，FCN-16s，FCN-32s
 # 在经典的VGGNet的基础上，把VGG网络最后的全连接层全部去掉，换为卷积层
-def FCN_32sEncoder(Encoder, feature_list=None, out_num=None):
+def FCN_32sDecoder(Encoder, feature_list=None, out_num=None):
     global model
     f1, f2, f3, f4 = feature_list
     Encoder_out_layer = Encoder.output
@@ -31,7 +31,7 @@ def FCN_32sEncoder(Encoder, feature_list=None, out_num=None):
     return model
 
 
-def FCN_16sEncoder(Encoder, feature_list=None, out_num=None):
+def FCN_16sDecoder(Encoder, feature_list=None, out_num=None):
     global model
     f1, f2, f3, f4, _ = feature_list
     Encoder_out_layer = Encoder.output
@@ -68,7 +68,7 @@ def FCN_16sEncoder(Encoder, feature_list=None, out_num=None):
     return model
 
 
-def FCN_8sEncoder(Encoder, feature_list=None, out_num=None):
+def FCN_8sDecoder(Encoder, feature_list=None, out_num=None):
     global model
     f1, f2, f3, f4, _ = feature_list
     Encoder_out_layer = Encoder.output

@@ -65,10 +65,10 @@ def make_lmdb_for_segmentation(image_path, label_path, txt_path, lmdb_dir):
     print("Solve")
 
 
-make_lmdb_for_segmentation(image_path=r'L:\ALASegmentationNets_v2\Data\Stage_4\train\img/',
-                           label_path=r'L:\ALASegmentationNets_v2\Data\Stage_4\train\mask/',
-                           txt_path=r'L:\ALASegmentationNets_v2\Data\Stage_4\train.txt',
-                           lmdb_dir=r'L:\ALASegmentationNets_v2\Data\Stage_4\Train_LMDB')
+# make_lmdb_for_segmentation(image_path=r'L:\ALASegmentationNets_v2\Data\Stage_4\train\img/',
+#                            label_path=r'L:\ALASegmentationNets_v2\Data\Stage_4\train\mask/',
+#                            txt_path=r'L:\ALASegmentationNets_v2\Data\Stage_4\train.txt',
+#                            lmdb_dir=r'L:\ALASegmentationNets_v2\Data\Stage_4\Train_LMDB')
 
 
 
